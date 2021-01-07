@@ -1,5 +1,3 @@
-
-
 ## FileControlUtility
 ### Usage
 - #### Transfering files:

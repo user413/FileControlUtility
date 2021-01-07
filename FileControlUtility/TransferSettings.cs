@@ -24,7 +24,7 @@ namespace FileControlUtility
         public bool KeepOriginFiles { get; set; }
         public bool CleanDestinyDirectory { get; set; }
         public bool DeleteUncommonFiles { get; set; }
-        public bool AllowIgnoreFileExt { get; set; }
+        //public bool AllowIgnoreFileExt { get; set; }
         public FileNameConflictMethod FileNameConflictMethod { get; set; }
         public SpecifiedFileNamesAndExtensionsMode SpecifiedFileNamesOrExtensionsMode { get; set; }
         public List<string> SpecifiedFileNamesAndExtensions { get; set; }

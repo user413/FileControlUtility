@@ -21,6 +21,7 @@
         public string Directory { get; set; }
         public string Origin { get; set; }
     }
+
     public class ReplacedFilesReport
     {
         public string File { get; set; }
