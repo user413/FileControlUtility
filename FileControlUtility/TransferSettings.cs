@@ -4,10 +4,7 @@ namespace FileControlUtility
 {
     public enum FileNameConflictMethod
     {
-        DO_NOT_MOVE = 0,
-        REPLACE_ALL = 1,
-        REPLACE_DIFFERENT = 2,
-        RENAME_DIFFERENT = 3
+        DO_NOT_MOVE, REPLACE_ALL, REPLACE_DIFFERENT, RENAME_DIFFERENT
     }
 
     public enum SpecifiedFileNamesAndExtensionsMode

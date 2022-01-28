@@ -271,7 +271,7 @@ namespace FileControlUtility
                 //System.Threading.Thread.Sleep(5000);
 
                 //-- MANAGING SPECIFIED FILENAMES AND EXTENSIONS
-                if (settings.SpecifiedFileNamesAndExtensions.Count > 0)
+                if (settings.SpecifiedFileNamesAndExtensions != null && settings.SpecifiedFileNamesAndExtensions.Count > 0)
                 {
                     string extension = Path.GetExtension(currentFileName);
 
@@ -709,7 +709,7 @@ namespace FileControlUtility
                     //throw new Exception($"An error has occurred when replacing the file: \"{destinyPath + destiny}\": {e.Message}");
                     ManageErrorActions(HandleErrorDialogRepeatable($"An error has occurred when replacing the file: \"{destinyPathWithFileName}\": {e.Message}",e,
                         originPathWithFileName,destinyPathWithFileName));
-                    if (this.RepeatFileExecution) return;
+                    if (RepeatFileExecution) return;
 
                     NotTransFilesReports.Add(new NotTransferedFilesReport
                     {
@@ -805,7 +805,7 @@ namespace FileControlUtility
                             //throw new Exception($"An error has occurred when moving and renaming the file: '{entry}' to '{newFileName}'. {e.Message}");
                             ManageErrorActions(HandleErrorDialogRepeatable($"An error has occurred when moving and renaming the file: \"{originPathWithFileName}\" " +
                                 $"to \"{destinyPathWithNewFileName}\". {e.Message}",e,originPathWithFileName,destinyPathWithFileName));
-                            if (this.RepeatFileExecution) return;
+                            if (RepeatFileExecution) return;
 
                             NotTransFilesReports.Add(new NotTransferedFilesReport
                             {
@@ -871,8 +871,8 @@ namespace FileControlUtility
                 {
                     while (true)
                     {
-                        byte[] data1 = b1.ReadBytes(64 * 1024);
-                        byte[] data2 = b2.ReadBytes(64 * 1024);
+                        byte[] data1 = b1.ReadBytes(65536); //64 * 1024
+                        byte[] data2 = b2.ReadBytes(65536);
                         if (data1.Length != data2.Length)
                             return false;
                         if (data1.Length == 0)
@@ -887,7 +887,7 @@ namespace FileControlUtility
                 HandleLogMessage($"Error: {e} when comparing files: \"{file1}\" and \"{file2}\"");
                 ManageErrorActions(HandleErrorDialogRepeatable($"An error has occurred when comparing files: \"{file1}\" and \"{file2}\". {e.Message}", e, 
                     file1, file2));
-                if (this.RepeatFileExecution) throw;
+                if (RepeatFileExecution) throw;
 
                 NotTransFilesReports.Add(new NotTransferedFilesReport
                 {
@@ -952,13 +952,13 @@ namespace FileControlUtility
                 switch ((FileTransferErrorActionRepeatable)fileTransferErrorAction)
                 {
                     case FileTransferErrorActionRepeatable.CANCEL:
-                        this.CancelExecution = true;
-                        this.RepeatFileExecution = false;
+                        CancelExecution = true;
+                        RepeatFileExecution = false;
                         HandleLogMessage("Canceling transfer");
                         break;
                     case FileTransferErrorActionRepeatable.JUMP:
-                        this.JumpFileExecution = true;
-                        this.RepeatFileExecution = false;
+                        JumpFileExecution = true;
+                        RepeatFileExecution = false;
                         HandleLogMessage("Jumping to the next file");
                         break;
                     case FileTransferErrorActionRepeatable.REPEAT:
@@ -972,13 +972,13 @@ namespace FileControlUtility
                 switch ((FileTransferErrorActionRepeatable)fileTransferErrorAction)
                 {
                     case FileTransferErrorActionRepeatable.CANCEL:
-                        this.CancelExecution = true;
-                        this.RepeatFileExecution = false;
+                        CancelExecution = true;
+                        RepeatFileExecution = false;
                         HandleLogMessage("Canceling transfer");
                         break;
                     case FileTransferErrorActionRepeatable.JUMP:
-                        this.JumpFileExecution = true;
-                        this.RepeatFileExecution = false;
+                        JumpFileExecution = true;
+                        RepeatFileExecution = false;
                         HandleLogMessage("Jumping to the next file");
                         break;
                 }
