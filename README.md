@@ -3,36 +3,38 @@
 - #### Transfering files:
 Create the object(s) containing the desired transfer settings:
 ```csharp
+//-- Specify a group of settings for a transfer
 TransferSettings ts = new TransferSettings
 {
-    // Source directory:
-    SourcePath = "C:\\source-directory-example",
+    SourcePath = "C:\\source-directory",
+    DestinyPath = "c:\\destiny-directory",
     
-    // Destiny directory:
-    DestinyPath = "C:\\destiny-directory-example",
-    
-    // Whether to delete all files from destiny directory (DeleteUncommonFiles and FileNameConflictMethod will be ignored if true):
+    // Whether to delete all files from destiny directory (DeleteUncommonFiles and FileNameConflictMethod will have no effect)
     CleanDestinyDirectory = false,
-    
-    // Whether to delete files present in the destiny directory that weren't present in source directory:
+    // Whether to delete files present in the destiny directory that weren't present in source directory
     DeleteUncommonFiles = true,
-    
-    // What to do with filename conflicts:
+    // What to do with filename conflicts
     FileNameConflictMethod = FileNameConflictMethod.REPLACE_DIFFERENT,
-    
-    // Whether to leave origin files untouched or delete them:
+    // Whether to copy origin files, otherwise move/delete
     KeepOriginFiles = false,
-    
-    // Whether to transfer subfolders and their content:
-    MoveSubFolders = true,
+    // Whether to transfer subfolders and their content, otherwise only top directory
+    IncludeSubFolders = true,
 
-    // What to do with the specified files or extensions:
+    // What to do with the specified files or extensions
     //  ALLOW_ONLY: only specified items will be transfered
     //  IGNORE: all specified items will be ignored
-    SpecifiedFileNamesOrExtensionsMode = SpecifiedFileNamesAndExtensionsMode.ALLOW_ONLY
-	
-    // List of specified files or extensions:
-    SpecifiedFileNamesAndExtensions = new System.Collections.Generic.List<string>() { ".extension1", "filename1.txt" }
+    SpecifiedFileNamesOrExtensionsMode = SpecifiedFileNamesAndExtensionsMode.ALLOW_ONLY,
+
+    // List of specified files or extensions
+    SpecifiedFileNamesAndExtensions = new System.Collections.Generic.List<string>() { ".extension1", "filename1.txt" },
+
+    // Update the numbers from filenames in the destiny directory enumerated with the pattern <name> (<number>)<extension>, 
+    // for each file from which they have originated. Works only with FileNameConflictMethod.RENAME_DIFFERENT.
+    ReenumerateRenamedFiles = false,
+
+    // The maximum quantity of enumerated files (including the original) selected from highest number in descending way to be kept and re-enumerated,
+    // and the excess to be deleted.
+    MaxKeptRenamedFileCount = 0
 };
 ```
 Begin transfer for the specified settings:
@@ -70,45 +72,52 @@ foreach (RemovedFilesAndDirectoriesReport report in fc.RemovedFilesAndDirReports
 Implement what to do with the error message, exception, and the related filenames when a non fatal error ocurred and other information during the transfer of a particular file (ideal for user interfaces and log) by extending the class FileControl:
 ```csharp
 //-- EXAMPLE:
-
 public class FileControlConsoleImpl : FileControl
 {
-    //-- Return an action when the particular file transfer can be repeated...
-    public override FileTransferErrorActionRepeatable HandleErrorDialogRepeatable(string errorMessage, Exception e, string originFile, string destinyFile)
+    //-- Choose what to do with the names of files being executed
+    protected override void HandleCurrentFileExecution(string trimmedPathWithFileName, FileInfo originFile, string destinyDir, TransferSettings settings)
     {
-        Console.WriteLine($"File jumped due to an error: \"{originFile}\"");
-        return FileTransferErrorActionRepeatable.JUMP;
-    }
-
-    //-- and when the particular file transfer can't be repeated
-    public override FileTransferErrorActionNonRepeatable HandleErrorDialogNonRepeatable(string errorMessage, Exception e, string originFile, string destinyFile)
-    {
-        Console.WriteLine($"File jumped due to an error: \"{originFile}\"");
-        return FileTransferErrorActionNonRepeatable.JUMP;
+        Console.WriteLine($"Transfering: \"{trimmedPathWithFileName}\"");
     }
 
     //-- Choose what to do with log messages (what happens during the execution)
-    public override void HandleLogMessage(string logMessage)
+    protected override void HandleLogMessage(string logMessage)
     {
         Console.WriteLine($"[{DateTime.Now}]: {logMessage}");
     }
 
-    //-- Choose what to do with the names of files being executed
-    public override void HandleCurrentFileExecution(string trimmedPathWithFileName)
+    //-- Return an action when the particular file transfer can be repeated...
+    protected override FileTransferErrorActionRepeatable HandleTransferErrorRepeatable(string errorMessage, Exception e, FileInfo originFile, string destinyDir, 
+        TransferSettings settings)
     {
-        Console.WriteLine($"Transfering: \"{trimmedPathWithFileName}\"");
+        Console.WriteLine($"File jumped due to an error: \"{originFile}\"");
+        return base.HandleTransferErrorRepeatable(errorMessage, e, originFile, destinyDir, settings);
+    }
+
+    //-- and when the particular file transfer can't be repeated
+    protected override FileTransferErrorActionNonRepeatable HandleTransferErrorNonRepeatable(string errorMessage, Exception e, FileInfo originFile, string destinyDir,
+        TransferSettings settings)
+    {
+        Console.WriteLine($"File jumped due to an error: \"{originFile}\"");
+        return base.HandleTransferErrorNonRepeatable(errorMessage, e, originFile, destinyDir, settings);
     }
 }
 ```
 The default return value for errors is JUMP (jump execution to next file).
 
 ------------
+#### Public methods:
+```csharp
+public void ManageFiles(List<TransferSettings> settings);
+public int FilesTotal(List<TransferSettings> settings);
+public void OrganizeEnumeratedFiles(string file, int maxKeptFileCount = 0);
+```
 #### FilenameConflictMethod (ENUM):
 Describes what to do when there are repeated filenames in the destiny directory (conflicts):
 
 |Type|Description|
 |:------------ |:------------|
-|DO_NOT_MOVE|Files will be ignored|
+|SKIP|Files will be ignored|
 |REPLACE_ALL|Replace all files|
 |REPLACE_DIFFERENT|Replace only different files (binary comparison)|
-|RENAME_DIFFERENT|Rename different files (binary comparison)|
+|RENAME_DIFFERENT|Rename different files giving it a number (binary comparison)|

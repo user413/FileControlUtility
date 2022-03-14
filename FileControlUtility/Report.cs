@@ -1,34 +1,34 @@
 ﻿namespace FileControlUtility
 {
-    public class TransferedFilesReport
+    public struct TransferedFilesReport
     {
         public string File { get; set; }
         public string Destiny { get; set; }
     }
-    public class NotTransferedFilesReport
+    public struct NotTransferedFilesReport
     {
         public string File { get; set; }
         public string Destiny { get; set; }
         public string Reason { get; set; }
     }
-    public class RenamedFilesReport
+    public struct RenamedFilesReport
     {
         public string File { get; set; }
         public string Destiny { get; set; }
     }
-    public class CreatedDirectoriesReport
+    public struct CreatedDirectoriesReport
     {
         public string Directory { get; set; }
         public string Origin { get; set; }
     }
 
-    public class ReplacedFilesReport
+    public struct ReplacedFilesReport
     {
         public string File { get; set; }
         public string Destiny { get; set; }
     }
 
-    public class RemovedFilesAndDirectoriesReport
+    public struct RemovedFilesAndDirectoriesReport
     {
         public string Entry { get; set; }
         public string Description { get; set; }

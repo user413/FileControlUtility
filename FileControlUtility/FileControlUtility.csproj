@@ -4,10 +4,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FileControlUtility</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>.NET library for file transfering with advanced options and binary comparison.</Description>
+    <Description>.NET core library for file transfering with advanced options and binary comparison.</Description>
     <Copyright>Nain</Copyright>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,9 +21,9 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
-
-  <Target Name="CopyPackage" AfterTargets="Pack">
-    <Copy SourceFiles="$(ProjectDir)\bin\release\$(PackageId).$(PackageVersion).nupkg" DestinationFolder="..\..\..\..\NUGET-PACKAGES" />
+  
+  <Target Name="CopyPackage" AfterTargets="Pack" Condition="'$(Configuration)'=='RELEASE'">
+    <Copy SourceFiles="$(ProjectDir)\bin\release\$(PackageId).$(PackageVersion).nupkg" DestinationFolder="$(workspace)\nuget-packages" />
   </Target>
 
 </Project>
