@@ -1,3 +1,14 @@
+## 1.2.0
+
+New features:
+- Directory exclusion in transfers (full and relative paths)
+- TransferSettings constructor with properties
+
+Fixed/altered:
+- Adjustment/formatting of paths - fix
+- DeleteUncommonFiles with an non existing destiny path - fix
+- Removed exception message portion from error event messages - fix
+
 ## 1.1.0
 
 New features:

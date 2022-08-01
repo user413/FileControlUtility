@@ -12,6 +12,36 @@ namespace FileControlUtility
         public FileInfo File { get; set; }
     }
 
+    internal static class Utility
+    {
+        internal static string AdjustPath(string path)
+        {
+            //return Path.GetFullPath(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            //    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+
+            return string.Join(Path.DirectorySeparatorChar.ToString(), path.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, 
+                StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        internal static bool CharIsPathSeparator(char v) => v == Path.DirectorySeparatorChar || v == Path.AltDirectorySeparatorChar;
+
+        internal static bool PathContainsDirectory(string path, string directory)
+        {
+            int index = path.IndexOf(directory, StringComparison.OrdinalIgnoreCase);
+            return index >= 0 &&
+                (
+                    (path.Length == index + directory.Length) || //-- directory is in the end of the path
+                    (path[index + directory.Length] == Path.DirectorySeparatorChar) //-- next character is a separator
+                );
+        }
+
+        internal static bool PathIsSubdirectory(string path, string directory)
+        {
+            return path.Length > directory.Length && path.Substring(0, directory.Length).Equals(directory, StringComparison.OrdinalIgnoreCase)
+                && (path[directory.Length] == Path.DirectorySeparatorChar/* || path[directory.Length] == Path.AltDirectorySeparatorChar*/);
+        }
+    }
+
     public partial class FileControl
     {
         private bool FileEquals(FileInfo file1, FileInfo file2, TransferSettings settings)

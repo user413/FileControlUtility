@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FileControlUtility</name>
+    </assembly>
+    <members>
+        <member name="F:FileControlUtility.FileTransferErrorActionRepeatable.SKIP">
+            <summary>
+            Ignore current file and jump to next.
+            </summary>
+        </member>
+        <member name="F:FileControlUtility.FileTransferErrorActionRepeatable.CANCEL">
+            <summary>
+            Cancel execution for the instance.
+            </summary>
+        </member>
+        <member name="F:FileControlUtility.FileTransferErrorActionRepeatable.REPEAT">
+            <summary>
+            Try to transfer current file again.
+            </summary>
+        </member>
+        <member name="F:FileControlUtility.FileTransferErrorActionNonRepeatable.SKIP">
+            <summary>
+            Ignore current file and jump to next.
+            </summary>
+        </member>
+        <member name="F:FileControlUtility.FileTransferErrorActionNonRepeatable.CANCEL">
+            <summary>
+            Cancel execution for the instance.
+            </summary>
+        </member>
+        <member name="M:FileControlUtility.FileControl.ManageFiles(System.Collections.Generic.List{FileControlUtility.TransferSettings})">
+            <summary>
+            Main method. Runs the transfer for the specified settings.<para>Information about the last transfer from the instance will be available in
+            the following properties:</para>
+            <code>TransferedFilesReports
+            NotTransferedFilesReports
+            RenamedFilesReports
+            CreatedDirReports
+            ReplacedFilesReports
+            RemovedFilesAndDirReports
+            </code>
+            </summary>
+        </member>
+        <member name="M:FileControlUtility.FileControl.FilesTotal(System.Collections.Generic.List{FileControlUtility.TransferSettings})">
+            <summary>
+            Retrieves the number of files that would be subject to a transfer given a list of settings.<para>Can be used as data for a progress bar, for example.</para>
+            </summary>
+        </member>
+        <member name="M:FileControlUtility.FileControl.HandleTransferErrorRepeatable(System.String,System.Exception,System.IO.FileInfo,System.String,FileControlUtility.TransferSettings)">
+            <summary>
+            Handles transfer errors in which the transfer of the file can be repeated, other than jumped or skipped.
+            </summary>
+            <remarks>Default: <c>FileTransferErrorActionRepeatable.SKIP</c></remarks>
+        </member>
+        <member name="M:FileControlUtility.FileControl.HandleTransferErrorNonRepeatable(System.String,System.Exception,System.IO.FileInfo,System.String,FileControlUtility.TransferSettings)">
+            <summary>
+            Handles transfer errors in which the transfer of the file cannot be repeated, only jumped or skipped.
+            </summary>
+            <remarks>Default: <c>FileTransferErrorActionNonRepeatable.SKIP</c></remarks>
+        </member>
+        <member name="M:FileControlUtility.FileControl.HandleLogMessage(System.String)">
+            <summary>
+            Handles log messages containing technical details.
+            </summary>
+        </member>
+        <member name="M:FileControlUtility.FileControl.HandleCurrentFileExecution(System.String,System.IO.FileInfo,System.String,FileControlUtility.TransferSettings)">
+            <summary>
+            Handles names of the files currently being transfered. <list type="table"><term><c>trimmedPathWithFileName</c></term>
+            <description>file name including part of the path that is common between source and destiny files paths.</description></list>
+            </summary>
+        </member>
+        <member name="M:FileControlUtility.FileControl.OrganizeEnumeratedFiles(System.String,System.Int32)">
+            <summary>
+            Update the numbers from all filenames enumerated with the pattern &lt;name&gt; (&lt;number&gt;)&lt;extension&gt;,
+            originated from the given file, in it's own directory.<para>The maximum quantity of enumerated files (including the original) can be informed in <c>maxKeptFileCount</c>, 
+            meaning the enumerated files, selected from highest number in descending way, will be kept and re-enumerated and the excess will be deleted. A value of 0 for 
+            <c>maxKeptFileCount</c> means all files will be kept.</para>
+            </summary>
+        </member>
+        <member name="M:FileControlUtility.FileControl.OrganizeEnumeratedFiles(System.IO.FileInfo,System.Int32)">
+            <summary>
+            Update the numbers from all filenames enumerated with the pattern &lt;name&gt; (&lt;number&gt;)&lt;extension&gt;,
+            originated from the given file, in it's own directory.<para>The maximum quantity of enumerated files (including the original) can be informed in <c>maxKeptFileCount</c>, 
+            meaning the enumerated files, selected from highest number in descending way, will be kept and re-enumerated and the excess will be deleted. A value of 0 for 
+            <c>maxKeptFileCount</c> means all files will be kept.</para>
+            </summary>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.IncludeSubFolders">
+            <summary>
+            Whether to include subfolders and their content, otherwise only the top directory.
+            </summary>
+            <remarks>Default: <c>false</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.KeepOriginFiles">
+            <summary>
+            Whether to copy origin files, otherwise move.
+            </summary>
+            <remarks>Default: <c>true</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.CleanDestinyDirectory">
+            <summary>
+            Delete all files from destiny directory before transfering.
+            </summary>
+            <remarks>Default: <c>false</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.FileNameConflictMethod">
+            <summary>
+            What to do with filename conflicts.
+            <list type="table"><item><term><c>FileNameConflictMethod.DO_NOT_MOVE</c></term><description>files will be skipped.</description></item>
+            <item><term><c>FileNameConflictMethod.REPLACE_ALL</c></term><description>replace all files.</description></item>
+            <item><term><c>FileNameConflictMethod.REPLACE_DIFFERENT</c></term><description>perfom a binary comparison, then replace, if they're not equal.</description></item>
+            <item><term><c>FileNameConflictMethod.RENAME_DIFFERENT</c></term><description>perfom a binary comparison, then copy the file giving it an enumerated name, 
+            if they're not equal.</description></item>
+            </list>
+            </summary>
+            <remarks>Default: <c>FileNameConflictMethod.DO_NOT_MOVE</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.SpecifiedFileNamesOrExtensionsMode">
+            <summary>
+            What to do with the specified files or extensions inside SpecifiedFileNamesOrExtensions list.
+            <list type="table"><item><term><c>SpecifiedEntriesMode.ALLOW_ONLY</c></term><description>only specified items will be transfered.</description></item>
+            <item><term><c>SpecifiedEntriesMode.IGNORE</c></term><description>all specified items will be ignored.</description></item></list>
+            </summary>
+            <remarks>Default: <c>SpecifiedEntriesMode.ALLOW_ONLY</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.SpecifiedFileNamesAndExtensions">
+            <summary>
+            List of files or extensions to be selected or excluded from the transfer based on <c>SpecifiedFileNamesOrExtensionsMode</c>. The list can be empty, meaning 
+            no file will be excluded.
+            </summary>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.SpecifiedDirectoriesMode">
+            <summary>
+            What to do with the specified directories inside SpecifiedDirectories list.
+            <list type="table"><item><term><c>SpecifiedEntriesMode.ALLOW_ONLY</c></term><description>only specified items will be transfered.</description></item>
+            <item><term><c>SpecifiedEntriesMode.IGNORE</c></term><description>all specified items will be ignored.</description></item></list>
+            </summary>
+            <remarks>Default: <c>SpecifiedEntriesMode.ALLOW_ONLY</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.SpecifiedDirectories">
+            <summary>
+            List of directories to be selected or excluded from the transfer based on <c>SpecifiedDirectoriesMode</c>. The list can be empty, meaning 
+            no directory will be excluded.
+            </summary>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.DeleteUncommonFiles">
+            <summary>
+            <para>Whether to delete files present in the destiny directory that weren't present in source directory.</para>
+            <para>Note: no effect while using <c>RENAME_DIFFERENT</c> conflict method type.</para>
+            </summary>
+            <remarks>Default: <c>false</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.ReenumerateRenamedFiles">
+            <summary>
+            Update the numbers from filenames in the destiny directory enumerated with the pattern &lt;name&gt; (&lt;number&gt;)&lt;extension&gt;, 
+            for each file from which they have originated. The maximum quantity of enumerated files (including the original) can be informed in <c>MaxKeptRenamedFileCount</c>, 
+            meaning the enumerated files, selected from highest number in descending way, will be kept and re-enumerated and the excess will
+            be deleted. <para>Note: has effect only while using <c>RENAME_DIFFERENT</c> conflict 
+            method type.</para><para>Note: applies only to files subject to the transfer, not all files in the destiny directory. To enumerate all files use 
+            the <c>OrganizeEnumeratedFiles</c> method.</para>
+            </summary>
+            <remarks>Default: <c>false</c></remarks>
+        </member>
+        <member name="P:FileControlUtility.TransferSettings.MaxKeptRenamedFileCount">
+            <summary>
+            The maximum quantity of enumerated files in the destiny directory (including the original) to be kept and re-enumerated, 
+            for each file from which they have originated. Files with the highest enumeration will be selected   
+            and the excess will be deleted.<para>Note: 0 means all files will be kept.</para><para>Note: has effect only while using <c>RENAME_DIFFERENT</c> conflict 
+            method type and <c>ReenumerateRenamedFiles</c> = true.</para>
+            </summary>
+            <remarks>Default: <c>0</c></remarks>
+        </member>
+    </members>
+</doc>

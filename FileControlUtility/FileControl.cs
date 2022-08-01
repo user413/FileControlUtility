@@ -10,7 +10,7 @@ namespace FileControlUtility
         /// <summary>
         /// Ignore current file and jump to next.
         /// </summary>
-        JUMP,
+        SKIP,
         /// <summary>
         /// Cancel execution for the instance.
         /// </summary>
@@ -26,7 +26,7 @@ namespace FileControlUtility
         /// <summary>
         /// Ignore current file and jump to next.
         /// </summary>
-        JUMP,
+        SKIP,
         /// <summary>
         /// Cancel execution for the instance.
         /// </summary>
@@ -137,7 +137,7 @@ namespace FileControlUtility
                 }
 
                 HandleLogMessage("## Include subfolders: " + settings.IncludeSubFolders);
-                HandleLogMessage("## Keep Files: " + settings.KeepOriginFiles);
+                HandleLogMessage("## Keep files: " + settings.KeepOriginFiles);
                 HandleLogMessage("## Clean destiny: " + settings.CleanDestinyDirectory);
                 HandleLogMessage("## Delete uncommon: " + settings.DeleteUncommonFiles);
                 HandleLogMessage("## Reorganize renamed files: " + settings.ReenumerateRenamedFiles);
@@ -145,15 +145,36 @@ namespace FileControlUtility
                 HandleLogMessage("## Specified filenames/extensions mode: " + settings.SpecifiedFileNamesOrExtensionsMode);
                 HandleLogMessage($"## Specified filenames/extensions:" +
                     (settings.SpecifiedFileNamesAndExtensions == null ? "" : $" \"{string.Join("\",\"", settings.SpecifiedFileNamesAndExtensions)}\""));
+                HandleLogMessage("## Specified directories mode: " + settings.SpecifiedDirectoriesMode);
+                HandleLogMessage($"## Specified directories:" +
+                    (settings.SpecifiedDirectories == null ? "" : $" \"{string.Join("\",\"", settings.SpecifiedDirectories)}\""));
             }
 
             string[] originDirectories = null; //-- Used for IncludeSubFolders, !KeepOriginFiles and deleteUncommonFiles
             List<string> trimmedFiles = new List<string>();
             List<string> trimmedDirectories = new List<string>(); //-- Used for IncludeSubFolders and deleteUncommonFiles
-            string[] destinyFiles = null; //-- Used for deleteUncommonFiles
-            string[] destinyDirectories = null; //-- Used for deleteUncommonFiles
+            string[] destinyFiles = { }; //-- Used for deleteUncommonFiles
+            string[] destinyDirectories = { }; //-- Used for deleteUncommonFiles
+            List<string> adjustedSpecDirs = null; //-- sdjusted specified directories
 
             //GenerateFilesAndDirectoriesLists();
+
+            try
+            {
+                if (settings.SpecifiedDirectories != null)
+                {
+                    adjustedSpecDirs = settings.SpecifiedDirectories.Select(d =>
+                        Utility.CharIsPathSeparator(d[0]) ? //-- if spec dir is relative otherwise full
+                            $"{Path.DirectorySeparatorChar}{Utility.AdjustPath(d)}" :
+                            $"{Utility.AdjustPath(d)}"
+                    ).ToList(); 
+                }
+            }
+            catch (Exception e)
+            {
+                HandleLogMessage($"An error has occurred while formating specified directories list. {e.Message} Aborting.");
+                throw;
+            }
 
             try
             {
@@ -170,25 +191,30 @@ namespace FileControlUtility
 
                     if (deleteUncommonFiles)
                     {
-                        destinyDirectories = Directory.GetDirectories(settings.DestinyPath, "*", SearchOption.AllDirectories);
-                        destinyFiles = Directory.GetFiles(settings.DestinyPath, "*", SearchOption.AllDirectories);
+                        if (Directory.Exists(settings.DestinyPath))
+                        {
+                            destinyDirectories = Directory.GetDirectories(settings.DestinyPath, "*", SearchOption.AllDirectories);
+                            destinyFiles = Directory.GetFiles(settings.DestinyPath, "*", SearchOption.AllDirectories); 
+                        }
                     }
                 }
                 else
                 {
                     originFiles = Directory.GetFiles(settings.SourcePath, "*", SearchOption.TopDirectoryOnly);
 
-                    if (deleteUncommonFiles)
+                    if (deleteUncommonFiles && Directory.Exists(settings.DestinyPath))
                         destinyFiles = Directory.GetFiles(settings.DestinyPath, "*", SearchOption.TopDirectoryOnly);
                 }
 
                 //-- GENERATING COMMON TRIMMED FILE PATHS
                 foreach (string file in originFiles)
-                    trimmedFiles.Add(file.Replace(settings.SourcePath, ""));
+                    //trimmedFiles.Add(file.Replace(settings.SourcePath, ""));
+                    trimmedFiles.Add(file.Substring(settings.SourcePath.Length, file.Length - settings.SourcePath.Length));
 
                 if (settings.IncludeSubFolders) 
                     foreach (string originDirectory in originDirectories)
-                        trimmedDirectories.Add(originDirectory.Replace(settings.SourcePath, ""));
+                        //trimmedDirectories.Add(originDirectory.Replace(settings.SourcePath, ""));
+                        trimmedDirectories.Add(originDirectory.Substring(settings.SourcePath.Length, originDirectory.Length - settings.SourcePath.Length));
             }
             catch (Exception e)
             {
@@ -258,6 +284,23 @@ namespace FileControlUtility
                     {
                         foreach (string trimmedDirectory in trimmedDirectories)
                         {
+                            //-- MANAGING SPECIFIED DIRECTORIES
+                            if (settings.SpecifiedDirectories != null && settings.SpecifiedDirectories.Count > 0)
+                            {
+                                string originDirectory = settings.SourcePath + trimmedDirectory;
+                                bool dirIsSpecified = adjustedSpecDirs.Exists(d =>
+                                    Utility.CharIsPathSeparator(d[0]) ? //-- if spec dir is relative otherwise full
+                                        Utility.PathContainsDirectory(trimmedDirectory, d) :
+                                        Utility.PathIsSubdirectory(originDirectory, d) ||
+                                        d.Equals(originDirectory, StringComparison.OrdinalIgnoreCase));
+
+                                if (
+                                    !dirIsSpecified && settings.SpecifiedDirectoriesMode == SpecifiedEntriesMode.ALLOW_ONLY ||
+                                    dirIsSpecified && settings.SpecifiedDirectoriesMode == SpecifiedEntriesMode.IGNORE
+                                )
+                                    continue;
+                            }
+
                             string destinyDir = settings.DestinyPath + trimmedDirectory;
 
                             if (!Directory.Exists(destinyDir))
@@ -328,34 +371,60 @@ namespace FileControlUtility
                 HandleCurrentFileExecution(trimmedPathWithFileName, originFile, destinyFile.DirectoryName, settings);
                 //System.Threading.Thread.Sleep(5000);
 
+                //-- MANAGING SPECIFIED DIRECTORIES
+                if (settings.SpecifiedDirectories != null && settings.SpecifiedDirectories.Count > 0)
+                {
+                    string trimmedDir = originFile.DirectoryName.Substring(settings.SourcePath.Length, originFile.DirectoryName.Length - settings.SourcePath.Length);
+
+                    bool dirIsSpecified = adjustedSpecDirs.Exists(d =>
+                        Utility.CharIsPathSeparator(d[0]) ? //-- if spec dir is relative otherwise full
+                            Utility.PathContainsDirectory(trimmedDir, d) :
+                            Utility.PathIsSubdirectory(originFile.DirectoryName, d) ||
+                            d.Equals(originFile.DirectoryName, StringComparison.OrdinalIgnoreCase));
+
+                    if (
+                        !dirIsSpecified && settings.SpecifiedDirectoriesMode == SpecifiedEntriesMode.ALLOW_ONLY ||
+                        dirIsSpecified && settings.SpecifiedDirectoriesMode == SpecifiedEntriesMode.IGNORE
+                    )
+                    {
+                        NotTransferedFilesReports.Add(new NotTransferedFilesReport
+                        {
+                            File = originFile.FullName,
+                            Destiny = destinyFile.DirectoryName,
+                            Reason = $"Directory ignored"
+                        });
+
+                        continue;
+                    }
+                }
+
                 //-- MANAGING SPECIFIED FILENAMES AND EXTENSIONS
                 if (settings.SpecifiedFileNamesAndExtensions != null && settings.SpecifiedFileNamesAndExtensions.Count > 0)
                 {
                     string extension = Path.GetExtension(currentFileName);
-                    bool fileIsSpecified = settings.SpecifiedFileNamesAndExtensions.Exists(x => x.Equals(currentFileName, StringComparison.OrdinalIgnoreCase));
-                    bool extensionIsSpecified = settings.SpecifiedFileNamesAndExtensions.Exists(x => x.Equals(extension, StringComparison.OrdinalIgnoreCase));
+                    bool fileIsSpecified = settings.SpecifiedFileNamesAndExtensions.Exists(f => f.Equals(currentFileName, StringComparison.OrdinalIgnoreCase));
+                    bool extensionIsSpecified = settings.SpecifiedFileNamesAndExtensions.Exists(e => e.Equals(extension, StringComparison.OrdinalIgnoreCase));
 
                     if (
                         (
-                            settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedFileNamesAndExtensionsMode.ALLOW_ONLY &&
+                            settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedEntriesMode.ALLOW_ONLY &&
                             !fileIsSpecified && !extensionIsSpecified
                         ) ||
                         (
-                            settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedFileNamesAndExtensionsMode.IGNORE &&
+                            settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedEntriesMode.IGNORE &&
                             (fileIsSpecified || extensionIsSpecified)
                         )
                     )
                     {
                         string ignoredReasonText;
-                        string ignoredLogText;
+                        //string ignoredLogText;
 
-                        if (settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedFileNamesAndExtensionsMode.ALLOW_ONLY)
+                        if (settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedEntriesMode.ALLOW_ONLY)
                         {
-                            ignoredReasonText = $"Filename or extension ignored";
-                            ignoredLogText = $"Filename or extension ignored. File not transfered:\"'{originFile.FullName}\" as \"{destinyFile.FullName}\"";
+                            ignoredReasonText = "Filename or extension ignored";
+                            //ignoredLogText = $"Filename or extension ignored. File not transfered:\"'{originFile.FullName}\" as \"{destinyFile.FullName}\"";
                         }
-
-                        else if (settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedFileNamesAndExtensionsMode.IGNORE && fileIsSpecified)
+                        else if (settings.SpecifiedFileNamesOrExtensionsMode == SpecifiedEntriesMode.IGNORE && fileIsSpecified)
                         {
                             ignoredReasonText = $"Filename ignored ({currentFileName})";
                             //ignoredLogText = $"Filename ignored ({currentFileName}). File not transfered:\"'{originFile.FullName}\" as \"{destinyFile.FullName}\"";
@@ -532,7 +601,7 @@ namespace FileControlUtility
 
                     //throw new Exception($"An error has occurred when transfering the file: '{settings.DestinyPath + destiny}'. {e.Message}");
                     ManageErrorActions(HandleTransferErrorRepeatable($"An error has occurred when transfering the file \"{originFile.FullName}\" to " +
-                        $"\"{destinyFile.DirectoryName}\": {e.Message}", e, originFile, destinyFile.DirectoryName, settings));
+                        $"\"{destinyFile.DirectoryName}\".", e, originFile, destinyFile.DirectoryName, settings));
                     
                     if (RepeatFileExecution) return;
 
@@ -582,8 +651,8 @@ namespace FileControlUtility
                     {
                         HandleLogMessage($"Error: {e} when deleting the source file \"{originFile.FullName}\"");
                         //throw new Exception($"An error has occurred when deleting the source file '{entry}'. {e.Message}");
-                        ManageErrorActions(HandleTransferErrorNonRepeatable($"An error has occurred when deleting the source file \"{originFile.FullName}\". " +
-                            $"{e.Message}", e, originFile, destinyFile.DirectoryName, settings));
+                        ManageErrorActions(HandleTransferErrorNonRepeatable($"An error has occurred when deleting the source file \"{originFile.FullName}\".",
+                            e, originFile, destinyFile.DirectoryName, settings));
                     }
                 }
 
@@ -679,7 +748,7 @@ namespace FileControlUtility
                 //}
                 //throw new Exception($"An error has occurred when when replacing \"{destinyPath + destiny}\": {e.Message}");
 
-                ManageErrorActions(HandleTransferErrorRepeatable($"An error has occurred while replacing \"{destinyFile.FullName}\": {e.Message}", e,
+                ManageErrorActions(HandleTransferErrorRepeatable($"An error has occurred while replacing \"{destinyFile.FullName}\".", e,
                     originFile, destinyFile.DirectoryName, settings));
                 
                 if (RepeatFileExecution) return;
@@ -790,7 +859,7 @@ namespace FileControlUtility
                     //}
 
                     //throw new Exception($"An error has occurred when replacing the file: \"{destinyPath + destiny}\": {e.Message}");
-                    ManageErrorActions(HandleTransferErrorRepeatable($"An error has occurred when replacing the file: \"{destinyFile.FullName}\": {e.Message}", e,
+                    ManageErrorActions(HandleTransferErrorRepeatable($"An error has occurred when replacing the file: \"{destinyFile.FullName}\".", e,
                         originFile, destinyFile.DirectoryName, settings));
 
                     if (RepeatFileExecution) return;
@@ -944,7 +1013,7 @@ namespace FileControlUtility
                 catch (Exception e)
                 {
                     errorLogMessage = $"Error: \"{e}\" while reorganizing enumerated files originated from \"{originFile.FullName}\"";
-                    errorDialogMessage = $"An error has occurred while reorganizing enumerated files originated from \"{originFile.FullName}\". {e.Message}";
+                    errorDialogMessage = $"An error has occurred while reorganizing enumerated files originated from \"{originFile.FullName}\".";
                     throw;
                 }
             }
@@ -1008,20 +1077,22 @@ namespace FileControlUtility
         /// <summary>
         /// Handles transfer errors in which the transfer of the file can be repeated, other than jumped or skipped.
         /// </summary>
+        /// <remarks>Default: <c>FileTransferErrorActionRepeatable.SKIP</c></remarks>
         protected virtual FileTransferErrorActionRepeatable HandleTransferErrorRepeatable(string errorMessage, Exception e, FileInfo originFile, string destinyDir, 
             TransferSettings settings)
         {
-            return FileTransferErrorActionRepeatable.JUMP;
+            return FileTransferErrorActionRepeatable.SKIP;
         }
 
         //-- ...and when the particular file transfer can't be repeated...
         /// <summary>
         /// Handles transfer errors in which the transfer of the file cannot be repeated, only jumped or skipped.
         /// </summary>
+        /// <remarks>Default: <c>FileTransferErrorActionNonRepeatable.SKIP</c></remarks>
         protected virtual FileTransferErrorActionNonRepeatable HandleTransferErrorNonRepeatable(string errorMessage, Exception e, FileInfo originFile, 
             string destinyDir, TransferSettings settings)
         {
-            return FileTransferErrorActionNonRepeatable.JUMP;
+            return FileTransferErrorActionNonRepeatable.SKIP;
         }
 
         //-- Choose what to do with log messages (what happens during the execution)
@@ -1054,7 +1125,7 @@ namespace FileControlUtility
                         RepeatFileExecution = false;
                         HandleLogMessage("Canceling transfer");
                         break;
-                    case FileTransferErrorActionRepeatable.JUMP:
+                    case FileTransferErrorActionRepeatable.SKIP:
                         JumpFileExecution = true;
                         RepeatFileExecution = false;
                         HandleLogMessage("Jumping to the next file");
@@ -1074,7 +1145,7 @@ namespace FileControlUtility
                         RepeatFileExecution = false;
                         HandleLogMessage("Canceling transfer");
                         break;
-                    case FileTransferErrorActionRepeatable.JUMP:
+                    case FileTransferErrorActionRepeatable.SKIP:
                         JumpFileExecution = true;
                         RepeatFileExecution = false;
                         HandleLogMessage("Jumping to the next file");

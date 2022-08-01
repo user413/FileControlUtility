@@ -4,15 +4,21 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FileControlUtility</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>.NET core library for file transfering with advanced options and binary comparison.</Description>
+    <Description>.NET Core library for file transfering with advanced options and binary comparison.</Description>
     <Copyright>Nain</Copyright>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
+    <Authors>Nain</Authors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <DocumentationFile>FileControlUtility.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>FileControlUtility.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

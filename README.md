@@ -27,6 +27,16 @@ TransferSettings ts = new TransferSettings
 
     // List of specified files or extensions
     SpecifiedFileNamesAndExtensions = new System.Collections.Generic.List<string>() { ".extension1", "filename1.txt" },
+	
+    // What to do with the specified directories
+    SpecifiedDirectoriesMode = SpecifiedEntriesMode.IGNORE,
+
+    // List of specified directories - full and relative paths can be used
+    SpecifiedDirectories = new List<string>() 
+    {
+        @"\git\Example", //relative path
+        @"C:\Users\Username\Example" //full path
+    },
 
     // Update the numbers from filenames in the destiny directory enumerated with the pattern <name> (<number>)<extension>, 
     // for each file from which they have originated. Works only with FileNameConflictMethod.RENAME_DIFFERENT.
