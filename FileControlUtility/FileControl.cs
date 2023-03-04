@@ -164,7 +164,7 @@ namespace FileControlUtility
                 if (settings.SpecifiedDirectories != null)
                 {
                     adjustedSpecDirs = settings.SpecifiedDirectories.Select(d =>
-                        Utility.CharIsPathSeparator(d[0]) ? //-- if spec dir is relative otherwise full
+                        Utility.CharIsPathSeparator(d[0]) && !Utility.CharIsPathSeparator(d[1]) ? //-- if spec dir is relative otherwise full
                             $"{Path.DirectorySeparatorChar}{Utility.AdjustPath(d)}" :
                             $"{Utility.AdjustPath(d)}"
                     ).ToList(); 

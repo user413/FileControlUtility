@@ -171,5 +171,10 @@
             </summary>
             <remarks>Default: <c>0</c></remarks>
         </member>
+        <member name="M:FileControlUtility.Utility.PathContainsDirectory(System.String,System.String)">
+            <summary>
+            Directories must start with directory separator
+            </summary>
+        </member>
     </members>
 </doc>

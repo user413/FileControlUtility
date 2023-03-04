@@ -19,12 +19,29 @@ namespace FileControlUtility
             //return Path.GetFullPath(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             //    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
-            return string.Join(Path.DirectorySeparatorChar.ToString(), path.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, 
+            bool startsWithDoubleSep = PathStartsWithDoubleSeparator(path);
+
+            return (startsWithDoubleSep ? $"{Path.DirectorySeparatorChar}{Path.DirectorySeparatorChar}" : "") +
+                string.Join(Path.DirectorySeparatorChar.ToString(), path.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
                 StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        private static bool PathStartsWithDoubleSeparator(string path)
+        {
+            for (int i = 0; i < path.Length; i++)
+            {
+                if (path[i] != Path.DirectorySeparatorChar && path[i] != Path.AltDirectorySeparatorChar) break;
+                if (i == 1) return true;
+            }
+
+            return false;
         }
 
         internal static bool CharIsPathSeparator(char v) => v == Path.DirectorySeparatorChar || v == Path.AltDirectorySeparatorChar;
 
+        /// <summary>
+        /// Directories must start with directory separator
+        /// </summary>
         internal static bool PathContainsDirectory(string path, string directory)
         {
             int index = path.IndexOf(directory, StringComparison.OrdinalIgnoreCase);
@@ -141,7 +158,7 @@ namespace FileControlUtility
         private void OrganizeEnumeratedFiles(FileInfo file, int maxKeptFileCount, List<EnumeratedFile> enumeratedFiles)
         {
             if (enumeratedFiles == null)
-                enumeratedFiles = GetAllEnumeratedFiles(file); 
+                enumeratedFiles = GetAllEnumeratedFiles(file);
 
             bool needsReenumeration = false;
 

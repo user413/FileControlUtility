@@ -1,3 +1,8 @@
+## 1.2.1
+
+Fixed/altered:
+- Allow transfer for paths starting with double "\\" or "/" (servers)
+
 ## 1.2.0
 
 New features:

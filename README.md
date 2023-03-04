@@ -6,7 +6,7 @@ Create the object(s) containing the desired transfer settings:
 //-- Specify a group of settings for a transfer
 TransferSettings ts = new TransferSettings
 {
-    SourcePath = "C:\\source-directory",
+    SourcePath = "c:\\source-directory",
     DestinyPath = "c:\\destiny-directory",
     
     // Whether to delete all files from destiny directory (DeleteUncommonFiles and FileNameConflictMethod will have no effect)
@@ -26,7 +26,7 @@ TransferSettings ts = new TransferSettings
     SpecifiedFileNamesOrExtensionsMode = SpecifiedFileNamesAndExtensionsMode.ALLOW_ONLY,
 
     // List of specified files or extensions
-    SpecifiedFileNamesAndExtensions = new System.Collections.Generic.List<string>() { ".extension1", "filename1.txt" },
+    SpecifiedFileNamesAndExtensions = new List<string>() { ".extension1", "filename1.txt" },
 	
     // What to do with the specified directories
     SpecifiedDirectoriesMode = SpecifiedEntriesMode.IGNORE,
@@ -50,7 +50,7 @@ TransferSettings ts = new TransferSettings
 Begin transfer for the specified settings:
 ```csharp
 FileControl fc = new FileControl();
-fc.ManageFiles(new System.Collections.Generic.List<TransferSettings>() { ts });
+fc.ManageFiles(new List<TransferSettings>() { ts });
 ```
 Information about a transfer will be present in a FileControl instance:
 ```csharp

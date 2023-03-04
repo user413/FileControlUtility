@@ -7,7 +7,7 @@
     <Description>.NET Core library for file transfering with advanced options and binary comparison.</Description>
     <Copyright>Nain</Copyright>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Authors>Nain</Authors>
   </PropertyGroup>
 
@@ -15,10 +15,12 @@
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <DocumentationFile>FileControlUtility.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>FileControlUtility.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
