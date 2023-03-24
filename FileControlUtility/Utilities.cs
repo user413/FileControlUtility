@@ -14,11 +14,11 @@ namespace FileControlUtility
 
     internal static class Utility
     {
-        internal static string AdjustPath(string path)
+        /// <summary>
+        /// Adjusts full paths.
+        /// </summary>
+        internal static string AdjustFullPath(string path)
         {
-            //return Path.GetFullPath(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-            //    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-
             bool startsWithDoubleSep = PathStartsWithDoubleSeparator(path);
 
             return (startsWithDoubleSep ? $"{Path.DirectorySeparatorChar}{Path.DirectorySeparatorChar}" : "") +
@@ -26,11 +26,20 @@ namespace FileControlUtility
                 StringSplitOptions.RemoveEmptyEntries));
         }
 
+        /// <summary>
+        /// Adjusts full and relative paths.
+        /// </summary>
+        internal static string AdjustPath(string path) => 
+            PathIsRelative(path) ? $"{Path.DirectorySeparatorChar}{AdjustFullPath(path)}" : $"{AdjustFullPath(path)}";
+
+        internal static bool PathIsRelative(string path) => 
+            path.Length >= 2 && CharIsPathSeparator(path[0]) && !CharIsPathSeparator(path[1]);
+
         private static bool PathStartsWithDoubleSeparator(string path)
         {
             for (int i = 0; i < path.Length; i++)
             {
-                if (path[i] != Path.DirectorySeparatorChar && path[i] != Path.AltDirectorySeparatorChar) break;
+                if (!CharIsPathSeparator(path[i])) break;
                 if (i == 1) return true;
             }
 
@@ -61,7 +70,7 @@ namespace FileControlUtility
 
     public partial class FileControl
     {
-        private bool FileEquals(FileInfo file1, FileInfo file2, TransferSettings settings)
+        private bool FileEquals(FileInfo file1, FileInfo file2, TransferSettings settings, ref RepeatableTaskResultedAction repeatableTaskResultedAction)
         {
             try
             {
@@ -86,11 +95,11 @@ namespace FileControlUtility
             }
             catch (Exception e)
             {
-                HandleLogMessage($"Error: {e} when comparing files: \"{file1}\" and \"{file2}\"");
-                ManageErrorActions(HandleTransferErrorRepeatable($"An error has occurred when comparing files: \"{file1}\" and \"{file2}\". {e.Message}", e,
-                    file1, file2.DirectoryName, settings));
+                OnLogMessageGenerated($"Error: {e} when comparing files: \"{file1}\" and \"{file2}\"");
+                repeatableTaskResultedAction = ManageErrorActions(OnErrorOccured(new TransferErrorArgs($"An error has occurred when comparing files: \"{file1}\" and " +
+                    $"\"{file2}\".", e, TransferErrorOrigin.TransferingFile, file1, file2.DirectoryName, settings)));
 
-                if (RepeatFileExecution) throw;
+                if (repeatableTaskResultedAction == RepeatableTaskResultedAction.Retry) throw;
 
                 NotTransferedFilesReports.Add(new NotTransferedFilesReport
                 {
@@ -155,7 +164,7 @@ namespace FileControlUtility
         //        OrganizeEnumeratedFiles(file, maxKeptFileCount, null);
         //}
 
-        private void OrganizeEnumeratedFiles(FileInfo file, int maxKeptFileCount, List<EnumeratedFile> enumeratedFiles)
+        private void OrganizeEnumeratedFiles(FileInfo file, int maxKeptFileCount, List<EnumeratedFile>? enumeratedFiles)
         {
             if (enumeratedFiles == null)
                 enumeratedFiles = GetAllEnumeratedFiles(file);
@@ -194,7 +203,7 @@ namespace FileControlUtility
                     Description = "Deleted enumerated file"
                 });
 
-                HandleLogMessage($"File deleted: \"{f.File.FullName}\"");
+                OnLogMessageGenerated($"File deleted: \"{f.File.FullName}\"");
             }
 
             for (int i = 0; i < filesToKeep.Count; i++)
@@ -211,7 +220,7 @@ namespace FileControlUtility
                 File.Move(filesToKeep[i].File.FullName, newName);
                 //filesToKeep[i].Info.MoveTo(newName);
 
-                HandleLogMessage($"File renamed: \"{filesToKeep[i].File.FullName}\" to \"{newName}\"");
+                OnLogMessageGenerated($"File renamed: \"{filesToKeep[i].File.FullName}\" to \"{newName}\"");
 
                 RenamedFilesReports.Add(new RenamedFilesReport
                 {

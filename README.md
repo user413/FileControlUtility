@@ -4,38 +4,44 @@
 Create the object(s) containing the desired transfer settings:
 ```csharp
 //-- Specify a group of settings for a transfer
-TransferSettings ts = new TransferSettings
+TransferSettings ts = new()
 {
-    SourcePath = "c:\\source-directory",
-    DestinyPath = "c:\\destiny-directory",
-    
-    // Whether to delete all files from destiny directory (DeleteUncommonFiles and FileNameConflictMethod will have no effect)
+    SourcePath = "C:\\source-directory",
+    DestinyPath = "C:\\destiny-directory",
+
+    // Whether to delete all files from destiny directory before transfering
     CleanDestinyDirectory = false,
     // Whether to delete files present in the destiny directory that weren't present in source directory
     DeleteUncommonFiles = true,
     // What to do with filename conflicts
     FileNameConflictMethod = FileNameConflictMethod.REPLACE_DIFFERENT,
-    // Whether to copy origin files, otherwise move/delete
+    // Whether to copy origin files (keep), otherwise move/delete
     KeepOriginFiles = false,
     // Whether to transfer subfolders and their content, otherwise only top directory
     IncludeSubFolders = true,
 
     // What to do with the specified files or extensions
-    //  ALLOW_ONLY: only specified items will be transfered
+    //  TRANSFER_ONLY: only specified items will be transfered
     //  IGNORE: all specified items will be ignored
-    SpecifiedFileNamesOrExtensionsMode = SpecifiedFileNamesAndExtensionsMode.ALLOW_ONLY,
+    FilteredFileNamesOrExtensionsMode = FilterMode.TRANSFER_ONLY,
 
-    // List of specified files or extensions
-    SpecifiedFileNamesAndExtensions = new List<string>() { ".extension1", "filename1.txt" },
-	
+    // List of specified files and extensions
+    FilteredFileNamesAndExtensions = new List<string>()
+    {
+        ".extension1",
+        "filename1.txt",
+        @"C:\full-path-to\file.exe"
+    },
+
     // What to do with the specified directories
-    SpecifiedDirectoriesMode = SpecifiedEntriesMode.IGNORE,
+    FilteredDirectoriesMode = FilterMode.IGNORE,
 
     // List of specified directories - full and relative paths can be used
-    SpecifiedDirectories = new List<string>() 
+    FilteredDirectories = new List<string>()
     {
         @"\git\Example", //relative path
-        @"C:\Users\Username\Example" //full path
+        @"C:\Users\Username\Example", //full path
+        @"\\server\Example" //server path
     },
 
     // Update the numbers from filenames in the destiny directory enumerated with the pattern <name> (<number>)<extension>, 
@@ -49,8 +55,8 @@ TransferSettings ts = new TransferSettings
 ```
 Begin transfer for the specified settings:
 ```csharp
-FileControl fc = new FileControl();
-fc.ManageFiles(new List<TransferSettings>() { ts });
+FileControl fc = new();
+fc.Transfer(new List<TransferSettings>() { ts });
 ```
 Information about a transfer will be present in a FileControl instance:
 ```csharp
@@ -78,49 +84,44 @@ foreach (CreatedDirectoriesReport report in fc.CreatedDirReports)
 foreach (RemovedFilesAndDirectoriesReport report in fc.RemovedFilesAndDirReports)
     Console.WriteLine($"Removed file/directory: \"{report.Entry}\" Description: {report.Description}");
 ```
-- #### Override methods
-Implement what to do with the error message, exception, and the related filenames when a non fatal error ocurred and other information during the transfer of a particular file (ideal for user interfaces and log) by extending the class FileControl:
+- #### Events
+The ErrorOccured event allows the client to choose a TransferErrorAction which allows the action which caused the error to be retried, skipped or 
+canceled. Canceling will shutdown the whole transfer.
 ```csharp
-//-- EXAMPLE:
-public class FileControlConsoleImpl : FileControl
+//-- Examples:
+
+//-- Handle an error and set the next step
+fc.ErrorOccured += new ErrorOccuredHandler((sender, args) =>
 {
-    //-- Choose what to do with the names of files being executed
-    protected override void HandleCurrentFileExecution(string trimmedPathWithFileName, FileInfo originFile, string destinyDir, TransferSettings settings)
+    //-- Skipping all transfer of files by default when errors occur
+    if (args.TransferErrorOrigin == TransferErrorOrigin.TransferingFile)
     {
-        Console.WriteLine($"Transfering: \"{trimmedPathWithFileName}\"");
+        Console.WriteLine($"Skipping file due to an error: \"{args.OriginFile}\"");
+        args.TransferErrorAction = TransferErrorAction.SKIP;
     }
+});
 
-    //-- Choose what to do with log messages (what happens during the execution)
-    protected override void HandleLogMessage(string logMessage)
-    {
-        Console.WriteLine($"[{DateTime.Now}]: {logMessage}");
-    }
+//-- Choose what to do with the names of files being executed
+fc.FileExecuting += new FileExecutingHandler((sender, args) =>
+{
+    Console.WriteLine($"Transfering: \"{args.TrimmedPathWithFileName}\"");
+});
 
-    //-- Return an action when the particular file transfer can be repeated...
-    protected override FileTransferErrorActionRepeatable HandleTransferErrorRepeatable(string errorMessage, Exception e, FileInfo originFile, string destinyDir, 
-        TransferSettings settings)
-    {
-        Console.WriteLine($"File jumped due to an error: \"{originFile}\"");
-        return base.HandleTransferErrorRepeatable(errorMessage, e, originFile, destinyDir, settings);
-    }
-
-    //-- and when the particular file transfer can't be repeated
-    protected override FileTransferErrorActionNonRepeatable HandleTransferErrorNonRepeatable(string errorMessage, Exception e, FileInfo originFile, string destinyDir,
-        TransferSettings settings)
-    {
-        Console.WriteLine($"File jumped due to an error: \"{originFile}\"");
-        return base.HandleTransferErrorNonRepeatable(errorMessage, e, originFile, destinyDir, settings);
-    }
-}
+//-- Choose what to do with log messages
+fc.LogMessageGenerated += new LogMessageGeneratedHandler((sender, logMessage) =>
+{
+    Console.WriteLine($"[{DateTime.Now}]: {logMessage}");
+});
 ```
-The default return value for errors is JUMP (jump execution to next file).
+The default return value for errors is SKIP when no handler is set.
 
 ------------
 #### Public methods:
 ```csharp
-public void ManageFiles(List<TransferSettings> settings);
+public void Transfer(List<TransferSettings> settings);
 public int FilesTotal(List<TransferSettings> settings);
 public void OrganizeEnumeratedFiles(string file, int maxKeptFileCount = 0);
+public static string AdjustPath(string path);
 ```
 #### FilenameConflictMethod (ENUM):
 Describes what to do when there are repeated filenames in the destiny directory (conflicts):

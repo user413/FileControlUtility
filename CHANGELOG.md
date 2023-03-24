@@ -1,7 +1,16 @@
+## 1.3.0
+
+New features:
+- Transition to .NET Standard 2.1
+- Event handlers added, replacing virtual methods
+- Error handling simplified into a single event (OnErrorOccured) and handles a wider group of actions (deletion of files/directories) other than
+  the transfer of files
+- Full paths and server paths (starting with \\) can be specified for filtering of files / server paths can be specified for filtering of directories
+
 ## 1.2.1
 
 Fixed/altered:
-- Allow transfer for paths starting with double "\\" or "/" (servers)
+- Allow transfer for paths starting with double "\\" or "//" (servers)
 
 ## 1.2.0
 
